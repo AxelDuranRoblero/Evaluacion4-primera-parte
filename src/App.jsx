@@ -1,35 +1,65 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
+import TodoForm from "./components/TodoForm";
+import TodoList from "./components/TodoList";
 
 function App() {
-  const [data, setData] = useState([]);        
-  const [loading, setLoading] = useState(true); 
-  const [error, setError] = useState(null);     
+  const [todos, setTodos] = useState([]);
 
   useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/posts')
-      .then(response => response.json())
-      .then(data => {
-        setData(data);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error('Error fetching data:', error);
-        setError(error);
-        setLoading(false);
-      });
+    const todosGuardados = localStorage.getItem("todos");
+    if (todosGuardados) {
+      setTodos(JSON.parse(todosGuardados));
+    }
   }, []);
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error fetching data.</p>;
+
+  useEffect(() => {
+    if (todos.length > 0) {
+      localStorage.setItem("todos", JSON.stringify(todos));
+    } else {
+      localStorage.removeItem("todos");
+    }
+  }, [todos]);
+
+  const agregarTarea = (texto) => {
+    const nuevaTarea = {
+      id: Date.now(),
+      texto,
+      completado: false,
+    };
+    setTodos([...todos, nuevaTarea]);
+  };
+
+  const eliminarTarea = (id) => {
+    setTodos(todos.filter((todo) => todo.id !== id));
+  };
+
+  const toggleTarea = (id) => {
+    setTodos(
+      todos.map((todo) =>
+        todo.id === id ? { ...todo, completado: !todo.completado } : todo
+      )
+    );
+  };
+
+  const actualizarTarea = (id, nuevoTexto) => {
+    setTodos(
+      todos.map((todo) =>
+        todo.id === id ? { ...todo, texto: nuevoTexto } : todo
+      )
+    );
+  };
 
   return (
     <div>
-      <h1>Posts API</h1>
-      <ul>
-        {data.map(post => (
-          <li key={post.id}>{post.title}</li>
-        ))}
-      </ul>
+      <h1>Listado de Pendientes</h1>
+      <TodoForm agregarTarea={agregarTarea} />
+      <TodoList
+        todos={todos}
+        eliminarTarea={eliminarTarea}
+        toggleTarea={toggleTarea}
+        actualizarTarea={actualizarTarea}
+      />
     </div>
   );
 }
